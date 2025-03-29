@@ -55,7 +55,7 @@ namespace AiShowcaseWeb.Services
         {
             var requestData = new
             {
-                model = "llama2",
+                model = "llama3.2-vision",
                 temperature = 0.7,
                 max_tokens = 150,
                 stream = true,  // Set stream to true
@@ -85,6 +85,8 @@ namespace AiShowcaseWeb.Services
 
             if (response.IsSuccessStatusCode)
             {
+                bool done = false;
+
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                 {
@@ -98,14 +100,8 @@ namespace AiShowcaseWeb.Services
                                 // Parse the JSON response to extract content and done status
                                 dynamic jsonResponse = JsonConvert.DeserializeObject(line);
 
-                                // Check if the 'message' object exists and extract the 'content'
-                                string responseContent = jsonResponse?.message?.content;
-
-                                // If there's content, send it to the stream handler
-                                if (!string.IsNullOrEmpty(responseContent))
-                                {
-                                    await streamHandler(JsonConvert.SerializeObject(jsonResponse));
-                                }
+                                await streamHandler(JsonConvert.SerializeObject(jsonResponse));
+                                
 
                             }
                             catch (JsonException ex)

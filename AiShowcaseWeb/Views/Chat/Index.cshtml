@@ -1,11 +1,11 @@
 ﻿@{
-    ViewData["Title"] = "Chat with Llama2 AI";
+    ViewData["Title"] = "Chat with Llama3.2-vision AI";
 }
 
 <h1>@ViewData["Title"]</h1>
 
 <div class="d-flex flex-column" style="height: calc(100% - 60px)">
-    <div id="chatList" class="d-flex flex-column align-items-center gap-4 bg-secondary shadow-sm p-3 rounded flex-grow-1">
+    <div id="chatList" class="d-flex flex-column align-items-center gap-4 bg-secondary shadow-sm p-3 rounded flex-grow-1" style="height: 0px">
         <div class="ai-chat">
             Hello there..
         </div>
@@ -45,7 +45,6 @@
 
         eventSource.onmessage = function (event) {
             var data = JSON.parse(event.data);
-                console.log(data);
 
             // Append each chunk of the response to the response div
             aiChat.innerHTML += data.message.content;
@@ -53,11 +52,15 @@
             // If 'done' is true, stop the stream
             if (data.done === true) {
                 eventSource.close();  // Close the EventSource connection
-                resetButtons(); // Reset the buttons after stream completion
 
                 // Call the function to handle stream finish
                 onStreamFinish();
             }
+                const chatListDiv = document.getElementById('chatList');
+
+                if (chatListDiv.scrollHeight > chatListDiv.clientHeight) {
+                  chatListDiv.scrollTop = chatListDiv.scrollHeight;
+                }
         };
 
         eventSource.onerror = function (event) {
