@@ -1,0 +1,20 @@
+# Ignore Visual Studio specific folders
+.vs/
+.vs2019/
+.vs2017/
+
+# Ignore build and release directories
+AiShowcaseWeb/bin/
+AiShowcaseWeb/obj/
+
+# Ignore user-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Ignore Visual Studio Code workspace settings
+.vscode/
+
+# Ignore build output
+build/
