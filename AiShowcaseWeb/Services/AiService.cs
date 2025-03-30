@@ -85,7 +85,6 @@ namespace AiShowcaseWeb.Services
 
             if (response.IsSuccessStatusCode)
             {
-                bool done = false;
 
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
@@ -102,6 +101,73 @@ namespace AiShowcaseWeb.Services
 
                                 await streamHandler(JsonConvert.SerializeObject(jsonResponse));
                                 
+
+                            }
+                            catch (JsonException ex)
+                            {
+                                // Handle any errors in deserialization, for example, if the line isn't valid JSON
+                                Console.WriteLine($"Error deserializing JSON: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                await streamHandler("Error occurred while processing the request");
+            }
+        }
+
+        public async Task StreamOCRResponseAsync(string pdfText, string message, Func<string, Task> streamHandler, CancellationToken cancellationToken)
+        {
+            var requestData = new
+            {
+                model = "llama3.2-vision",
+                temperature = 0.7,
+                max_tokens = 150,
+                stream = true,  // Set stream to true
+                messages = new[] {
+                    new {
+                        role = "system",
+                        content = $"You are a PDF reader application that will search for information based on user request. Give a brief and concise response for every infromation needed. The PDF file already extracted, and the text content is as follows : ``` {pdfText}```"
+                    },
+                    new {
+                        role = "user",
+                        content = message
+                    }
+                }
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8, "application/json");
+
+            // Create a request message
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, OllamaApiUrl)
+            {
+                Content = content
+            };
+
+            // Send the request using SendAsync with ResponseHeadersRead
+            var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var line = await reader.ReadLineAsync();
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            try
+                            {
+                                // Parse the JSON response to extract content and done status
+                                dynamic jsonResponse = JsonConvert.DeserializeObject(line);
+
+                                await streamHandler(JsonConvert.SerializeObject(jsonResponse));
+
 
                             }
                             catch (JsonException ex)

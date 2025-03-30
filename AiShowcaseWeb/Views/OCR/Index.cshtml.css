@@ -1,0 +1,13 @@
+﻿#chatList {
+    overflow: auto;
+}
+
+#userMessage{
+    padding: .25em .75em;
+    border-radius: 1em;
+    
+    &:focus
+    {
+        outline: none;
+    }
+}

@@ -1,5 +1,159 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
+    ViewData["Title"] = "OCR functionality with Llama3.2-vision AI";
 }
+
+<h1>@ViewData["Title"]</h1>
+
+<input type="file" id="pdfFile" value="" accept="application/pdf" placeholder="Upload a PDF" onchange="convertToBase64()"/>
+
+<div id="chatContainer" class="d-flex flex-column d-none" style="height: calc(100% - 60px)">
+    <div id="chatList" class="d-flex flex-column align-items-center gap-4 bg-secondary shadow-sm p-3 rounded flex-grow-1" style="height: 0px">
+        <div class="ai-chat">
+            Hello there..
+        </div>
+    </div>
+    <div class="bg-light rounded shadow-sm d-flex justify-content-center align-items-center p-2 gap-2" style="width:100%">
+        <textarea id="userMessage" placeholder="Enter message" class="shadow-sm border-0" cols="64" rows="3"></textarea>
+        <button id="startStreamButton" onclick="startStream()" class="btn btn-dark btn-sm">Send</button>
+        <button id="cancelStreamButton" onclick="cancelStream()" class="btn btn-light btn-sm" style="display:none;">Stop</button>
+    </div>
+</div>
+
+<script>
+    let pdf64Encoded = '';
+    let eventSource;
+
+
+    async function convertToBase64()
+    {
+
+        //Read File
+        var selectedFile = document.getElementById('pdfFile').files;
+
+        console.log(selectedFile);
+        //Check File is not Empty
+        if (selectedFile.length > 0) {
+            // Select the very first file from list
+            var fileToLoad = selectedFile[0];
+            // FileReader function for read the file.
+            var fileReader = new FileReader();
+
+            // Onload of file read the file content
+            fileReader.onload = async function(fileLoadedEvent) {
+                pdf64Encoded = fileLoadedEvent.target.result;
+                
+
+                await $.ajax({
+                    method: 'post',
+                    url: '@Url.Action("SetPDF","OCR")',
+                    data: {
+                        pdf64Encoded: pdf64Encoded
+                    },
+                    success(response)
+                    {
+                        console.log('PDF Uploaded');
+                        document.getElementById('chatContainer').classList.remove('d-none');
+
+                    },
+                    error(response)
+                    {
+                        let errorMessage = 'Failed to upload PDF';
+
+                        alert(errorMessage);
+                        console.log(errorMessage);
+                        document.getElementById('chatContainer').classList.add('d-none');
+
+                    }
+                });
+
+            };
+
+            await fileReader.readAsDataURL(fileToLoad);
+        }
+    }
+
+    // Function to start the stream and send the request to the server
+    function startStream() {
+        const userMessage = document.getElementById('userMessage').value;
+
+        if (!userMessage) {
+            alert("Please enter a message.");
+            return;
+        }
+
+        let myChat = document.createElement('div');
+        myChat.classList.add('my-chat');
+        myChat.innerHTML = userMessage;
+
+        document.getElementById('chatList').appendChild(myChat);
+
+        // Create an EventSource to listen for SSE from the controller
+        eventSource = new EventSource('@Url.Action("StreamResponse", "OCR")?message=' + encodeURIComponent(userMessage));
+
+        let aiChat = document.createElement('div');
+        aiChat.classList.add('ai-chat');
+
+        document.getElementById('chatList').appendChild(aiChat);
+
+        eventSource.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+
+            // Append each chunk of the response to the response div
+            aiChat.innerHTML += data.message.content;
+
+            // If 'done' is true, stop the stream
+            if (data.done === true) {
+                eventSource.close();  // Close the EventSource connection
+
+                // Call the function to handle stream finish
+                onStreamFinish();
+            }
+                const chatListDiv = document.getElementById('chatList');
+
+                if (chatListDiv.scrollHeight > chatListDiv.clientHeight) {
+                  chatListDiv.scrollTop = chatListDiv.scrollHeight;
+                }
+        };
+
+        eventSource.onerror = function (event) {
+            console.error("Error receiving stream", event);
+            cancelStream();
+        };
+
+        // Show cancel button and hide the start button
+        document.getElementById("startStreamButton").style.display = "none";
+        document.getElementById("cancelStreamButton").style.display = "inline";
+    }
+
+    function onStreamFinish() {
+        console.log("Stream finished.");
+
+        // Reset the UI buttons to allow starting a new stream
+        document.getElementById("startStreamButton").style.display = "inline";
+        document.getElementById("cancelStreamButton").style.display = "none";
+    }
+
+    // Function to cancel the stream and notify the server
+    function cancelStream() {
+        if (eventSource) {
+            // Close the EventSource connection to stop receiving data
+            eventSource.close();
+
+            // Notify the server to cancel the processing
+            fetch('@Url.Action("CancelStreaming", "OCR")', {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Streaming canceled successfully');
+                }
+            }).catch(error => {
+                console.error('Error cancelling stream:', error);
+            });
+        }
+
+        // Hide the cancel button and show the start button again
+        document.getElementById("cancelStreamButton").style.display = "none";
+        document.getElementById("startStreamButton").style.display = "inline";
+    }
+
+</script>
