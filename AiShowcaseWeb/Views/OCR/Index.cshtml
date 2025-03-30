@@ -4,9 +4,9 @@
 
 <h1>@ViewData["Title"]</h1>
 
-<input type="file" id="pdfFile" value="" accept="application/pdf" placeholder="Upload a PDF" onchange="convertToBase64()"/>
+<input type="file" id="pdfFile" value="" accept="application/pdf" placeholder="Upload a PDF" onchange="convertToBase64()" class="form-control mb-3"/>
 
-<div id="chatContainer" class="d-flex flex-column d-none" style="height: calc(100% - 60px)">
+<div id="chatContainer" class="d-flex flex-column d-none" style="height: calc(100% - 100px)">
     <div id="chatList" class="d-flex flex-column align-items-center gap-4 bg-secondary shadow-sm p-3 rounded flex-grow-1" style="height: 0px">
         <div class="ai-chat">
             Hello there..

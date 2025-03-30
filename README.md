@@ -11,5 +11,9 @@ This project is an implementation of AI functionality in local Ollama applicatio
 1. Chatbot AI
 2. PDF OCR (use 1 page PDF only if your computer at minimum Llama3.2-vision requirement)
 
-## Demo
-The provided on this link : 
+## Preview
+1. Chatbot AI
+![chat.gif](Chat.gif)
+
+2. PDF OCR
+![ocr.gif](OCR.gif)
